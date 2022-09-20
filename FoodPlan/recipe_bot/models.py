@@ -7,8 +7,12 @@ class User(models.Model):
 
 
 class Recipe(models.Model):
-    picture = models.field_name = models.ImageField(upload_to=None)
-    description = models.TextField()
+    picture = models.ImageField(upload_to=None)
+    description = models.TextField(max_length=255)
+    # category = choice
+
+    def __repr__(self):
+        return self.description
 
 
 class Ingredient(models.Model):
@@ -19,3 +23,6 @@ class Ingredient(models.Model):
         'Recipe', 
         related_name='ingredients', 
         on_delete=models.CASCADE)
+
+    def __repr__(self):
+        return self.name
