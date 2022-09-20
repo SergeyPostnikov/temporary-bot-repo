@@ -15,4 +15,4 @@ class Reciepe(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(max_length=255)
     amount = models.FloatField()
-    
+    measure = models.CharField(max_length=10)
