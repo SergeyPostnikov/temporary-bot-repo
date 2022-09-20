@@ -1,0 +1,6 @@
+Django==3.1.*
+
+environs[django]==9.3.0
+
+python-dotenv==0.20.*
+python-telegram-bot==13.*
