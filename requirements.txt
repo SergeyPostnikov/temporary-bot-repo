@@ -1,4 +1,2 @@
-Django==3.1.*
-environs[django]==9.3.0
-python-dotenv==0.20.*
-python-telegram-bot==13.*
+Django==4.1.1
+Pillow==9.2.0
