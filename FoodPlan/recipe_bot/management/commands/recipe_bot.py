@@ -1,20 +1,21 @@
-import collections
 import logging
 
+from django.apps import apps
 from django.core.management.base import BaseCommand
 from django.conf import settings
+from pathlib import Path
 from telegram import InlineKeyboardButton
 from telegram import InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
-# from telegram.ext import CommandHandler
 from telegram.ext import Filters
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
-from .dialog_bot import DialogBot
-
 
 logger = logging.getLogger(__file__)
+
+
+APP_NAME = 'recipe_bot'
 
 
 class Command(BaseCommand):
@@ -47,9 +48,7 @@ class Command(BaseCommand):
                     'Мы хотим настроить свои предложения индивидуально для вас.\n'
                     'Для этого нам будут нужны ваше имя и телефон.\n'
                     'Хотите прочитать наше Соглашение об обработке персональных данных?'
-        )
-        # context.bot.send_message(chat_id=update.effective_chat.id, 
-        #                          text=question)        
+        ) 
         keyboard = [
              [
                  InlineKeyboardButton('Да', callback_data='да'),
@@ -60,19 +59,40 @@ class Command(BaseCommand):
         context.bot.send_message(chat_id=update.effective_chat.id, 
                                  text=question, reply_markup=reply_markup)
 
-    def bot_buttons_handler(self, update, _):
+    def bot_buttons_handler(self, update, context):
         query = update.callback_query
         variant = query.data
-        print(variant)
 
-        # `CallbackQueries` требует ответа, даже если 
-        # уведомление для пользователя не требуется, в противном
-        #  случае у некоторых клиентов могут возникнуть проблемы. 
-        # смотри https://core.telegram.org/bots/api#callbackquery.
+        # Обязательная команда (см. https://core.telegram.org/bots/api#callbackquery)
         query.answer()
-        # редактируем сообщение, тем самым кнопки 
-        # в чате заменятся на этот ответ.
-        # query.edit_message_text(text=f"Выбранный вариант: {variant}")
+
+        if variant == 'да':
+            self.publish_consent_pdf_in_telegram(update, context)
+
+    def publish_consent_pdf_in_telegram(self, update, context):
+        consent_pdf_filename = 'Consent_Of_Personal_Data_Processing.pdf'
+        app_dirpath = apps.get_app_config(APP_NAME).path
+        static_subfolder = settings.STATIC_URL.strip('/')
+        pdf_subfolder = 'pdf'
+        consent_pdf_filepath = Path(app_dirpath) / static_subfolder / pdf_subfolder / consent_pdf_filename
+
+        delay = 1
+        while True:
+            try:
+                context.bot.send_document(chat_id=update.effective_chat.id,
+                                          document=open(consent_pdf_filepath, 'rb'))
+                return
+            except FileNotFoundError as ex:
+                logger.warning(ex)
+                logger.warning(f'Нет файла {pdf_filepath}')
+                return
+            except telegram.error.NetworkError as ex:
+                logger.warning(ex)
+                time.sleep(delay)
+                delay = 10
+            except Exception as ex:
+                logger.warning(ex)
+                return
 
         # likes_python = yield from self.ask_yes_or_no(question)
         # print(likes_python)
