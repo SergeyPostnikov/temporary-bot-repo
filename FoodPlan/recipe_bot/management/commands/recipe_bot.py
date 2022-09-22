@@ -30,35 +30,35 @@ class Command(BaseCommand):
                             filemode='w'
         )
         self.updater = Updater(token=settings.TELEGRAM_BOT_TOKEN)
-        bot_text_handler = MessageHandler(Filters.text | Filters.command, self.bot_text_handler)
+        bot_text_handler = MessageHandler(Filters.text | Filters.command, self.handle_bot_text)
         self.updater.dispatcher.add_handler(bot_text_handler)
-        bot_button_handler = CallbackQueryHandler(self.bot_button_handler)
+        bot_button_handler = CallbackQueryHandler(self.handle_bot_button)
         self.updater.dispatcher.add_handler(bot_button_handler)
 
-        self.methods = {
-            'consent_pdf_sending': self.publish_consent_pdf,
-            'username_getting': self.get_user_name,
-        }
         self.dialogue_point = 'start'
         self.username = ''
+        self.user_phone = ''
+        self.current_handler = None
 
     def handle(self, *args, **kwargs):
         self.updater.start_polling()
         self.updater.idle()
 
-    def bot_text_handler(self, update, context):
+    def handle_bot_text(self, update, context):
         if update.channel_post.text == '/start':
             self.dialogue_point = 'start'
             self.username = ''
+            self.user_phone = ''
+            self.current_handler = None
             self.send_greeting_invitation(update, context)
             return
 
-        self.methods[self.dialogue_point](update, context)
+        self.current_handler(update, context)
 
-    def bot_button_handler(self, update, context):
+    def handle_bot_button(self, update, context):
         # Обязательная команда (см. https://core.telegram.org/bots/api#callbackquery)
         update.callback_query.answer()
-        self.methods[self.dialogue_point](update, context)
+        self.current_handler(update, context)
 
     def send_greeting_invitation(self, update, context):
         question = ('Рад встрече!\n'
@@ -76,14 +76,21 @@ class Command(BaseCommand):
              ],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        self.dialogue_point = 'consent_pdf_sending'
+        self.current_handler = self.handle_personal_data_processing_consent
         context.bot.send_message(chat_id=update.effective_chat.id, 
-                                 text=question, reply_markup=reply_markup)    
+                                 text=question, reply_markup=reply_markup)
 
-    def publish_consent_pdf(self, update, context):
-        if self.dialogue_point != 'consent_pdf_sending':
+    def handle_personal_data_processing_consent(self, update, context):
+        query = update.callback_query
+        variant = query.data
+        if variant == 'нет':
             return
 
+        self.publish_consent_pdf
+        message_start = f'Согласны?\n'
+        self.send_username_input_invitation(update, context, message_start)
+
+    def publish_consent_pdf(self, update, context):
         query = update.callback_query
         variant = query.data
         if variant == 'нет':
@@ -100,8 +107,6 @@ class Command(BaseCommand):
             try:
                 context.bot.send_document(chat_id=update.effective_chat.id,
                                           document=open(consent_pdf_filepath, 'rb'))
-                message_start = f'Согласны?\n'
-                self.send_username_input_invitation(update, context, message_start)
                 return
             except FileNotFoundError as ex:
                 logger.warning(ex)
@@ -117,13 +122,10 @@ class Command(BaseCommand):
 
     def send_username_input_invitation(self, update, context, message_start=''):
         message = f'{message_start}Введите ваше имя:'
-        self.dialogue_point = 'username_getting'
+        self.current_handler = self.handle_username_input
         context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
-    def get_user_name(self, update, context):
-        if self.dialogue_point != 'username_getting':
-            return
-
+    def handle_username_input(self, update, context):
         username = update.channel_post.text
         is_good_username = bool(username)
         if is_good_username:
@@ -135,8 +137,40 @@ class Command(BaseCommand):
             self.send_username_input_invitation(update, context, message_start='Неправильное имя.\n')
 
         self.username = username
-        self.send_username_phone_invitation(update, context)
+        self.send_user_phone_provision_way_invitation(update, context)
 
-    def send_username_phone_invitation(self, update, context):
+    def send_user_phone_provision_way_invitation(self, update, context):
+        question = ('Телефон вы можете ввести вручную\n'
+                    'или можете разрешить нам взять его из вашего Telegram.\n'
+                    'Что выбираете?'
+        ) 
+        keyboard = [
+             [
+                 InlineKeyboardButton('Введу вручную', callback_data='введу'),
+                 InlineKeyboardButton('Разрешаю взять', callback_data='разрешаю'),
+             ],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        self.current_handler = self.handle_user_phone_provision_way
+        context.bot.send_message(chat_id=update.effective_chat.id, 
+                                 text=question, reply_markup=reply_markup)
+
+    def handle_user_phone_provision_way(self, update, context):
+        query = update.callback_query
+        variant = query.data
+        if variant == 'введу':
+            self.send_user_phone_input_invitation(update, context)
+
+        self.get_user_phone_from_telegram(update, context)
+
+    def send_user_phone_input_invitation(self, update, context, message_start=''):
+        message = f'{message_start}Введите ваш телефон:'
+        self.current_handler = self.handle_user_phone_input
+        context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+
+    def handle_user_phone_input(self, update, context):
+        pass
+
+    def get_user_phone_from_telegram(self, update, context):
         pass
        
