@@ -28,6 +28,7 @@ class DialogBot(object):
         chat_id = update.channel_post.chat.id
         if update.channel_post.text == "/start":
             self.handlers.pop(chat_id, None)
+
         if chat_id not in self.handlers:
             answer = next(self.handlers[chat_id])
         else:
