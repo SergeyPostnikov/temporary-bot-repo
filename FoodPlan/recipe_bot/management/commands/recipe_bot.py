@@ -4,8 +4,10 @@ from django.apps import apps
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
+from pathvalidate import sanitize_filename
 from telegram import InlineKeyboardButton
 from telegram import InlineKeyboardMarkup
+from telegram.error import NetworkError
 from telegram.ext import CallbackQueryHandler
 from telegram.ext import Filters
 from telegram.ext import MessageHandler
@@ -28,19 +30,37 @@ class Command(BaseCommand):
                             filemode='w'
         )
         self.updater = Updater(token=settings.TELEGRAM_BOT_TOKEN)
-        bot_messages_handler = MessageHandler(Filters.text | Filters.command, self.bot_messages_handler)
-        self.updater.dispatcher.add_handler(bot_messages_handler)
-        bot_buttons_handler = CallbackQueryHandler(self.bot_buttons_handler)
-        self.updater.dispatcher.add_handler(bot_buttons_handler)
+        bot_text_handler = MessageHandler(Filters.text | Filters.command, self.bot_text_handler)
+        self.updater.dispatcher.add_handler(bot_text_handler)
+        bot_button_handler = CallbackQueryHandler(self.bot_button_handler)
+        self.updater.dispatcher.add_handler(bot_button_handler)
+
+        self.methods = {
+            'consent_pdf_sending': self.publish_consent_pdf,
+            'username_getting': self.get_user_name,
+        }
+        self.dialogue_point = 'start'
+        self.username = ''
 
     def handle(self, *args, **kwargs):
         self.updater.start_polling()
         self.updater.idle()
 
-    def bot_messages_handler(self, update, context):
-        if update.channel_post.text != "/start":
+    def bot_text_handler(self, update, context):
+        if update.channel_post.text == '/start':
+            self.dialogue_point = 'start'
+            self.username = ''
+            self.send_greeting_invitation(update, context)
             return
 
+        self.methods[self.dialogue_point](update, context)
+
+    def bot_button_handler(self, update, context):
+        # Обязательная команда (см. https://core.telegram.org/bots/api#callbackquery)
+        update.callback_query.answer()
+        self.methods[self.dialogue_point](update, context)
+
+    def send_greeting_invitation(self, update, context):
         question = ('Рад встрече!\n'
                     'Я могу подбирать для вас рецепты блюд.\n'
                     'Заинтересовались?\n'
@@ -56,20 +76,19 @@ class Command(BaseCommand):
              ],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
+        self.dialogue_point = 'consent_pdf_sending'
         context.bot.send_message(chat_id=update.effective_chat.id, 
-                                 text=question, reply_markup=reply_markup)
+                                 text=question, reply_markup=reply_markup)    
 
-    def bot_buttons_handler(self, update, context):
+    def publish_consent_pdf(self, update, context):
+        if self.dialogue_point != 'consent_pdf_sending':
+            return
+
         query = update.callback_query
         variant = query.data
+        if variant == 'нет':
+            return
 
-        # Обязательная команда (см. https://core.telegram.org/bots/api#callbackquery)
-        query.answer()
-
-        if variant == 'да':
-            self.publish_consent_pdf_in_telegram(update, context)
-
-    def publish_consent_pdf_in_telegram(self, update, context):
         consent_pdf_filename = 'Consent_Of_Personal_Data_Processing.pdf'
         app_dirpath = apps.get_app_config(APP_NAME).path
         static_subfolder = settings.STATIC_URL.strip('/')
@@ -81,12 +100,14 @@ class Command(BaseCommand):
             try:
                 context.bot.send_document(chat_id=update.effective_chat.id,
                                           document=open(consent_pdf_filepath, 'rb'))
+                message_start = f'Согласны?\n'
+                self.send_username_input_invitation(update, context, message_start)
                 return
             except FileNotFoundError as ex:
                 logger.warning(ex)
                 logger.warning(f'Нет файла {pdf_filepath}')
                 return
-            except telegram.error.NetworkError as ex:
+            except NetworkError as ex:
                 logger.warning(ex)
                 time.sleep(delay)
                 delay = 10
@@ -94,20 +115,28 @@ class Command(BaseCommand):
                 logger.warning(ex)
                 return
 
-        # likes_python = yield from self.ask_yes_or_no(question)
-        # print(likes_python)
-        # if likes_python:
-        #     answer = yield from discuss_good_python(name)
-        # else:
-        #     answer = yield from discuss_bad_python(name)
+    def send_username_input_invitation(self, update, context, message_start=''):
+        message = f'{message_start}Введите ваше имя:'
+        self.dialogue_point = 'username_getting'
+        context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
-    # def ask_yes_or_no(self, question):
-    #     keyboard = [
-    #          [
-    #              InlineKeyboardButton('Да', callback_data='да'),
-    #              InlineKeyboardButton('Нет', callback_data='нет'),
-    #          ],
-    #     ]
-    #     reply_markup = InlineKeyboardMarkup(keyboard)
-    #     answer = yield question, reply_markup
-    #     return answer
+    def get_user_name(self, update, context):
+        if self.dialogue_point != 'username_getting':
+            return
+
+        username = update.channel_post.text
+        is_good_username = bool(username)
+        if is_good_username:
+            usernames = [sanitize_filename(name.strip()).capitalize() for name in username.split()]
+            username = ' '.join(usernames)
+            is_good_username = len(username) > 2
+
+        if not is_good_username:
+            self.send_username_input_invitation(update, context, message_start='Неправильное имя.\n')
+
+        self.username = username
+        self.send_username_phone_invitation(update, context)
+
+    def send_username_phone_invitation(self, update, context):
+        pass
+       
