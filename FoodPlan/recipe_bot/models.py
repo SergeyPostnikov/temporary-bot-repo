@@ -1,28 +1,50 @@
+# import phonenumbers
 from django.db import models
-from django.core.validators import RegexValidator
+# from phonenumber_field.modelfields import PhoneNumberField
 
 
-class User(models.Model):
+class Chat(models.Model):
     categories = (
+        ('a', 'all'), 
         ('u', 'usual'), 
         ('v', 'vegeterian'), 
         ('k', 'for kids'))
-    name = models.CharField(max_length=255, blank=False)
-    phone_regex = RegexValidator(
-        regex=r'^\+?1?\d{9,15}$', 
-        message="Неверный формат заиси номера")
-    phone_number = models.CharField(
-        validators=[phone_regex], 
-        max_length=17, 
-        blank=False)
-    preferences = models.CharField(choices=categories, max_length=10)
+    chat_id = models.CharField('Id чата с пользователем', max_length=64, 
+                               db_index=True, null=False, blank=False)
+    username = models.CharField('Username пользователя из Telegram',
+                                max_length=32, null=False, blank=False)
+    first_name = models.CharField('Имя пользователя',
+                                  max_length=64, null=False, blank=False)
+    last_name = models.CharField('Фамилия пользователя',
+                                 max_length=64, null=False, blank=False)
+    phone_number = models.CharField('Номер телефона', max_length=16, 
+                                    default='', null=False, blank=True)
+    # pure_phone = PhoneNumberField('Нормализованный номер телефона',
+    #                               default='', null=False, blank=True)
+    bot_status = models.IntegerField(default=0)
+    preference = models.CharField(choices=categories, default='a', max_length=10)
 
     @classmethod
-    def create_user(cls, name, phone_number):
-        return cls.objects.create(name=name, phone_number=phone_number)
+    def get_or_create_chat(cls, chat_id, username, first_name, last_name):
+        return cls.objects.get_or_create(chat_id=chat_id, username=username, 
+                                         first_name=first_name, last_name=last_name)
+
+    # @classmethod
+    # def normalize_phone_number(cls, phone_number):
+    #     try:
+    #         pure_phone = phonenumbers.parse(phone_number, 'RU')
+    #     except phonenumbers.NumberParseException:
+    #         pure_phone = ''
+
+    #     if phonenumbers.is_valid_number(pure_phone):
+    #         pure_phone = phonenumbers.format_number(
+    #             pure_phone,
+    #             phonenumbers.PhoneNumberFormat.E164
+    #         )
+    #     return pure_phone
 
     def __repr__(self):
-        return self.name
+        return self.username
 
 
 class Recipe(models.Model):
@@ -38,8 +60,8 @@ class Recipe(models.Model):
     description = models.TextField(max_length=255)
     category = models.CharField(choices=categories, max_length=10)
     reaction = models.CharField(choices=reactions, max_length=10)
-    users = models.ManyToManyField(
-        User,  
+    chats = models.ManyToManyField(
+        Chat,  
         related_name='recipes',
         blank=True)
 
