@@ -51,7 +51,9 @@ class Recipe(models.Model):
     categories = (
         ('u', 'usual'), 
         ('v', 'vegeterian'), 
-        ('k', 'for kids'))
+        ('k', 'for kids'),
+        ('d', 'dietary'),
+        ('a', 'vegan'))
     reactions = (
         ('l', 'like'), 
         ('d', 'dislike'), 
@@ -59,7 +61,7 @@ class Recipe(models.Model):
     picture = models.ImageField(upload_to=None)
     description = models.TextField(max_length=255)
     category = models.CharField(choices=categories, max_length=10)
-    reaction = models.CharField(choices=reactions, max_length=10)
+    reaction = models.CharField(choices=reactions, max_length=10, default='i')
     chats = models.ManyToManyField(
         Chat,  
         related_name='recipes',
@@ -96,13 +98,13 @@ class Ingredient(models.Model):
 # выдавать рецепт
 # ставить лайк/dislike
 
-if __name__ == '__main__':
-    from recipe_bot.models import *
-    user = User.create_user('Steve Jobs', phone_number='6666336626')
-
-    potatoes = Recipe.objects.create(description='Жареная картошка')
-    potato = Ingredient.objects.create(name='картошка', amount=4, recipe=potatoes, measure='шт')
-    oil = Ingredient.objects.create(name='масло', amount=5, recipe=potatoes, measure='мл')
-    salt = Ingredient.objects.create(name='соль', amount=1, recipe=potatoes, measure='ч.л.')
-
-    print(potatoes.get_ingredients())
+# if __name__ == '__main__':
+#     from recipe_bot.models import *
+#     user = User.create_user('Steve Jobs', phone_number='6666336626')
+#
+#     potatoes = Recipe.objects.create(description='Жареная картошка')
+#     potato = Ingredient.objects.create(name='картошка', amount=4, recipe=potatoes, measure='шт')
+#     oil = Ingredient.objects.create(name='масло', amount=5, recipe=potatoes, measure='мл')
+#     salt = Ingredient.objects.create(name='соль', amount=1, recipe=potatoes, measure='ч.л.')
+#
+#     print(potatoes.get_ingredients())
