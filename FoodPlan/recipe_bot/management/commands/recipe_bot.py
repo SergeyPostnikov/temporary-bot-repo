@@ -5,13 +5,9 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
 from pathvalidate import sanitize_filename
-from telegram import InlineKeyboardButton
-from telegram import InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import NetworkError
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import Filters
-from telegram.ext import MessageHandler
-from telegram.ext import Updater
+from telegram.ext import CallbackQueryHandler, Filters, MessageHandler, Updater
 
 
 logger = logging.getLogger(__file__)
@@ -45,7 +41,10 @@ class Command(BaseCommand):
         self.updater.idle()
 
     def handle_bot_text(self, update, context):
-        if update.channel_post.text == '/start':
+        # TODO Проверить, есть ли в базе данных такой чат
+        #      Если его нет, то завести
+        #      Вернуть из функции запроса к базе статус диалога
+        if update.effective_chat.text == '/start':
             self.dialogue_point = 'start'
             self.username = ''
             self.user_phone = ''
@@ -61,13 +60,10 @@ class Command(BaseCommand):
         self.current_handler(update, context)
 
     def send_greeting_invitation(self, update, context):
-        question = ('Рад встрече!\n'
-                    'Я могу подбирать для вас рецепты блюд.\n'
-                    'Заинтересовались?\n'
-                    'Давайте познакомимся.\n'
-                    'Мы хотим настроить свои предложения индивидуально для вас.\n'
-                    'Для этого нам будут нужны ваше имя и телефон.\n'
-                    'Хотите прочитать наше Соглашение об обработке персональных данных?'
+        question = ('Давай познакомимся.\n'
+                    'Я хочу настроить свои предложения индивидуально для тебя.\n'
+                    'Для этого мне будут нужны твоё имя и телефон.\n'
+                    'Прислать наше Соглашение об обработке персональных данных?'
         ) 
         keyboard = [
              [
@@ -83,19 +79,15 @@ class Command(BaseCommand):
     def handle_personal_data_processing_consent(self, update, context):
         query = update.callback_query
         variant = query.data
-        if variant == 'нет':
+        print(variant)
+        if variant != 'да':
             return
 
-        self.publish_consent_pdf
+        self.publish_consent_pdf(update, context)
         message_start = f'Согласны?\n'
         self.send_username_input_invitation(update, context, message_start)
 
     def publish_consent_pdf(self, update, context):
-        query = update.callback_query
-        variant = query.data
-        if variant == 'нет':
-            return
-
         consent_pdf_filename = 'Consent_Of_Personal_Data_Processing.pdf'
         app_dirpath = apps.get_app_config(APP_NAME).path
         static_subfolder = settings.STATIC_URL.strip('/')
