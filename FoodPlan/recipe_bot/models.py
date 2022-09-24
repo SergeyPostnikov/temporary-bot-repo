@@ -1,4 +1,6 @@
 # import phonenumbers
+import random
+
 from django.db import models
 # from phonenumber_field.modelfields import PhoneNumberField
 
@@ -79,6 +81,14 @@ class Recipe(models.Model):
         pref = user.preferences
         recipes = cls.objects.filter(category__in=pref)
         return recipes
+
+    @classmethod
+    def get_random_recipe(cls):
+        "Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"
+
+        recipes = cls.objects.all()
+        random_recipe = random.choice(recipes)
+        return random_recipe
 
 
 # class Ingredient(models.Model):
