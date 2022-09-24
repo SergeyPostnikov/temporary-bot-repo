@@ -29,6 +29,19 @@ pip install -r requirements.txt
 ```
 python manage.py recipe_bot
 ```
+## Загрузка рецептов в базу из парсера
+    
+Запустите 
+```
+python manage.py shell
+```
+В shell пропишите следующие строчки:
+```
+from recipe_bot.models import Chat, Recipe
+from parser import *
+save_recipes()
+```
+Подождите 2 минуты
 
 ### Цель проекта
 
