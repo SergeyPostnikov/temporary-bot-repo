@@ -7,8 +7,7 @@ from bs4 import BeautifulSoup as b
 
 
 URL = 'https://www.edimdoma.ru/retsepty/'
-# categories = ['вегетарианские рецепты', 'диабетические рецепты', 'веганские рецепты', 'детское меню']
-categories = ['вегетарианские рецепты']
+categories = ['вегетарианские рецепты', 'диабетические рецепты', 'веганские рецепты', 'детское меню']
 recipes = []
 headers = {
     'access-control-expose-headers': 'AMP-Access-Control-Allow-Source-Origin',
@@ -88,7 +87,7 @@ def get_recipes_by_categories():
 
 def save_recipes():
     recipes = get_recipes_by_categories()
-    pprint(recipes)
+    # pprint(recipes)
     for recipe in recipes:
         picture = recipe['picture']
         title = recipe['title']

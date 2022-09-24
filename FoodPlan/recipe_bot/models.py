@@ -90,6 +90,13 @@ class Recipe(models.Model):
         random_recipe = random.choice(recipes)
         return random_recipe
 
+    @classmethod
+    def get_all_random_category(cls):
+        "Возвращает QuerySet, рандомных категорий которые есть в БД"
+
+        return cls.objects.all().values('category').distinct()
+
+
 
 # class Ingredient(models.Model):
 #     name = models.CharField(max_length=255, blank=False)
