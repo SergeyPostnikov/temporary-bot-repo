@@ -1,4 +1,5 @@
 from pprint import pprint
+import random
 
 from recipe_bot.models import Chat, Recipe
 import requests
@@ -67,6 +68,13 @@ def get_recipes(category, params):
         if 'title' in recipe:
             recipes.append(recipe)
     return recipes
+
+
+def get_random_recipe():
+    "Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"
+    recipes = Recipe.objects.all()
+    random_recipe = random.choice(recipes)
+    return random_recipe
 
 
 def get_recipes_by_categories():
