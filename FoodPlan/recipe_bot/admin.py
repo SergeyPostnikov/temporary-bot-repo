@@ -1,7 +1,4 @@
 from django.contrib import admin
-
-# Register your models here.
-from django.contrib import admin
 from django.utils.safestring import mark_safe
 
 from .models import Chat, Recipe
@@ -22,3 +19,4 @@ class CategoryAdmin(admin.ModelAdmin):
 # @admin.register(Ingredient)  # Регистрируем модель категории с помошью декоратора
 # class CategoryAdmin(admin.ModelAdmin):
 #     list_display = ('name', 'amount', 'measure')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
+

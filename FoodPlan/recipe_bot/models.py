@@ -13,23 +13,51 @@ class Chat(models.Model):
         ('k', 'for kids'))
     chat_id = models.CharField('Id чата с пользователем', max_length=64, 
                                db_index=True, null=False, blank=False)
-    username = models.CharField('Username пользователя из Telegram',
-                                max_length=32, null=False, blank=False)
-    first_name = models.CharField('Имя пользователя',
-                                  max_length=64, null=False, blank=False)
-    last_name = models.CharField('Фамилия пользователя',
-                                 max_length=64, null=False, blank=False)
-    phone_number = models.CharField('Номер телефона', max_length=16, 
+    username = models.CharField('Username пользователя',
+                                max_length=128, null=False, blank=True)
+    phone_number = models.CharField('Номер телефона пользователя', max_length=16, 
                                     default='', null=False, blank=True)
-    # pure_phone = PhoneNumberField('Нормализованный номер телефона',
-    #                               default='', null=False, blank=True)
-    bot_status = models.IntegerField(default=0)
+    dialogue_stage = models.IntegerField('Этап диалога с ботом', default=0)
     preference = models.CharField(choices=categories, default='a', max_length=10)
 
     @classmethod
-    def get_or_create_chat(cls, chat_id, username, first_name, last_name):
-        return cls.objects.get_or_create(chat_id=chat_id, username=username, 
-                                         first_name=first_name, last_name=last_name)
+    def get_or_create_chat(cls, chat_id, username=''):
+        return cls.objects.get_or_create(chat_id=chat_id, username=username)
+
+    @classmethod
+    def get_chat_details(cls, chat_id):
+        chats = cls.objects.filter(chat_id=chat_id)
+        if not chats:
+            return None
+
+        chat_details = {
+            'chat_id': chats[0].chat_id,
+            'username': chats[0].username,
+            'phone_number': chats[0].phone_number,            
+            'dialogue_stage': chats[0].dialogue_stage,
+        }
+        return chat_details
+
+    @classmethod
+    def update_dialogue_stage(cls, chat_id, dialogue_stage):
+        if cls.objects.filter(chat_id=chat_id).count() != 1:
+            return None
+        cls.objects.filter(chat_id=chat_id).update(dialogue_stage=dialogue_stage)
+        return dialogue_stage
+
+    @classmethod
+    def update_username(cls, chat_id, username):
+        if cls.objects.filter(chat_id=chat_id).count() != 1:
+            return None
+        cls.objects.filter(chat_id=chat_id).update(username=username)
+        return username
+
+    @classmethod
+    def update_phone_number(cls, chat_id, phone_number):
+        if cls.objects.filter(chat_id=chat_id).count() != 1:
+            return None
+        cls.objects.filter(chat_id=chat_id).update(phone_number=phone_number)
+        return phone_number
 
     # @classmethod
     # def normalize_phone_number(cls, phone_number):
