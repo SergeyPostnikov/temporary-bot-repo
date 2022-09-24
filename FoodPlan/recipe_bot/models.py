@@ -59,7 +59,9 @@ class Recipe(models.Model):
         ('d', 'dislike'), 
         ('i', 'indifferent'))
     picture = models.ImageField(upload_to=None)
-    description = models.TextField(max_length=255)
+    title = models.CharField(max_length=255, default='')
+    ingredients = models.TextField(max_length=255, default='')
+    description = models.TextField(max_length=255, default='a', null=True)
     category = models.CharField(choices=categories, max_length=10)
     reaction = models.CharField(choices=reactions, max_length=10, default='i')
     chats = models.ManyToManyField(
@@ -70,8 +72,8 @@ class Recipe(models.Model):
     def __repr__(self):
         return self.description
 
-    def get_ingredients(self):
-        return self.ingredients.all()
+    # def get_ingredients(self):
+    #     return self.ingredients.all()
 
     def get_recipe(cls, user):
         pref = user.preferences
@@ -79,17 +81,17 @@ class Recipe(models.Model):
         return recipes
 
 
-class Ingredient(models.Model):
-    name = models.CharField(max_length=255, blank=False)
-    amount = models.FloatField(blank=False)
-    measure = models.CharField(max_length=10, blank=False)
-    recipe = models.ForeignKey(
-        'Recipe', 
-        related_name='ingredients', 
-        on_delete=models.CASCADE)
-
-    def __repr__(self):
-        return self.name
+# class Ingredient(models.Model):
+#     name = models.CharField(max_length=255, blank=False)
+#     amount = models.FloatField(blank=False)
+#     measure = models.CharField(max_length=10, blank=False)
+#     recipe = models.ForeignKey(
+#         'Recipe',
+#         related_name='ingredients',
+#         on_delete=models.CASCADE)
+#
+#     def __repr__(self):
+#         return self.name
 
 
 # функционал модели

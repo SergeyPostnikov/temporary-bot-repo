@@ -1,13 +1,13 @@
 from pprint import pprint
 
-from recipe_bot.models import Chat, Ingredient, Recipe
+from recipe_bot.models import Chat, Recipe
 import requests
 from bs4 import BeautifulSoup as b
 
 
 URL = 'https://www.edimdoma.ru/retsepty/'
-API_KEI = '5465780969:AAEbul6zfVI38kWCKxQjn9jta92NUm40KUE'
-categories = ['вегетарианские рецепты', 'диабетические рецепты', 'веганские рецепты', 'детское меню']
+# categories = ['вегетарианские рецепты', 'диабетические рецепты', 'веганские рецепты', 'детское меню']
+categories = ['вегетарианские рецепты']
 recipes = []
 headers = {
     'access-control-expose-headers': 'AMP-Access-Control-Allow-Source-Origin',
@@ -54,9 +54,16 @@ def get_recipes(category, params):
         for ingredient in recipe_ingredients:
             title = ingredient['data-intredient-title']
             count = ingredient['data-amount']
-            ingredients.append(f"{title} - {count}")
+            count_name = ingredient['data-unit-title']
+            ingredients.append(f"{title}-{count}-{count_name}")
         recipe['ingredients'] = ingredients
         recipe['category'] = category
+        soup = get_soup(response_ingredients)
+        descriptions_soup = soup.find_all('div', class_='plain-text recipe_step_text')
+        description = ""
+        for count, d in enumerate(descriptions_soup):
+            description += f'{count+1}. {d.get_text()} ' + '\n'
+        recipe['description'] = description
         if 'title' in recipe:
             recipes.append(recipe)
     return recipes
@@ -78,6 +85,7 @@ def save_recipes():
         picture = recipe['picture']
         title = recipe['title']
         ingredients = recipe['ingredients']
+        description = recipe['description']
         category = recipe['category']
         if category == 'детское меню':
             selected_category = 'k'
@@ -89,5 +97,5 @@ def save_recipes():
             selected_category = 'a'
         else:
             selected_category = 'u'
-        Recipe.objects.create(picture=picture, description=title, category=selected_category)
+        Recipe.objects.create(picture=picture, description=description, category=selected_category, title=title, ingredients=ingredients)
 

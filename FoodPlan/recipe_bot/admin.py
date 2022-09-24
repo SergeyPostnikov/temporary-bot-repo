@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import Chat, Recipe, Ingredient
+from .models import Chat, Recipe
 
 
 @admin.register(Chat)  # Регистрируем модель категории с помошью декоратора
@@ -15,10 +15,10 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Recipe)  # Регистрируем модель категории с помошью декоратора
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('picture', 'description', 'category', 'reaction')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
+    list_display = ('title', 'picture', 'description', 'category', 'ingredients', 'reaction')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
+    list_display_links = ('title', 'description')
 
 
-
-@admin.register(Ingredient)  # Регистрируем модель категории с помошью декоратора
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'amount', 'measure')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
+# @admin.register(Ingredient)  # Регистрируем модель категории с помошью декоратора
+# class CategoryAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'amount', 'measure')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
