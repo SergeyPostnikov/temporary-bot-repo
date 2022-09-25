@@ -32,6 +32,8 @@ class Chat(models.Model):
     dialogue_stage = models.IntegerField('Этап диалога пользователя с ботом', default=0)
     category = models.CharField('Выбранная категория рецептов', max_length=120, 
                                 null=False, blank=True, default='')
+    recipe_id = models.IntegerField('Просматриваемый рецепт', default=-1,
+                                    null=False, blank=True)
 
     @classmethod
     def get_or_create_chat(cls, chat_id, username=''):
@@ -52,6 +54,11 @@ class Chat(models.Model):
         return chat_details
 
     @classmethod
+    def get_like_recipes_titles(cls, chat_id):
+        queryset = cls.objects.get(chat_id=chat_id).likes.all().values('title')
+        return [item['title'] for item in queryset]
+
+    @classmethod
     def get_chat_recipe_category(cls, chat_id):
         chats = cls.objects.filter(chat_id=chat_id).values('category')
         if len(chats) != 1:
@@ -64,6 +71,13 @@ class Chat(models.Model):
             return None
         cls.objects.filter(chat_id=chat_id).update(dialogue_stage=dialogue_stage)
         return dialogue_stage
+
+    @classmethod
+    def update_recipe_id(cls, chat_id, recipe_id):
+        if cls.objects.filter(chat_id=chat_id).count() != 1:
+            return None
+        cls.objects.filter(chat_id=chat_id).update(recipe_id=recipe_id)
+        return recipe_id
 
     @classmethod
     def update_recipe_category(cls, chat_id, category):
@@ -87,10 +101,11 @@ class Chat(models.Model):
         return phone_number
 
     @classmethod
-    def add_likes_recipe(cls, chat_id, recipe):
-        "Поставить лайк рецепту, параметрами передаются объкт Recipe и номер чата"
+    def add_recipe_like(cls, chat_id):
+        """Поставить лайк рецепту c recipe_id из указанного чата"""
 
         chat = Chat.objects.get(chat_id=chat_id)
+        recipe = Recipe.objects.get(id=chat.recipe_id)
         chat.likes.add(recipe)
 
     @classmethod
@@ -125,19 +140,11 @@ class Recipe(models.Model):
         Category,
         related_name='recipes',
         verbose_name='Категория рецепта',
-        on_delete=models.CASCADE
+        on_delete=models.PROTECT
     )
-
-    chats = models.ManyToManyField(
-        Chat,  
-        related_name='recipes',
-        blank=True)
 
     def __repr__(self):
         return self.title
-
-    # def get_ingredients(self):
-    #     return self.ingredients.all()
 
     def get_recipe(cls, user):
         pref = user.preferences
