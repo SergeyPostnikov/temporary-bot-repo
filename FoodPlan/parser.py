@@ -1,11 +1,12 @@
 from pprint import pprint
+import random
 
+from recipe_bot.models import Chat, Recipe
 import requests
 from bs4 import BeautifulSoup as b
 
 
 URL = 'https://www.edimdoma.ru/retsepty/'
-API_KEI = '5465780969:AAEbul6zfVI38kWCKxQjn9jta92NUm40KUE'
 categories = ['вегетарианские рецепты', 'диабетические рецепты', 'веганские рецепты', 'детское меню']
 recipes = []
 headers = {
@@ -49,16 +50,30 @@ def get_recipes(category, params):
             pass
         soup = get_soup(response_ingredients)
         recipe_ingredients = soup.find_all('input', class_='checkbox__input recipe_ingredient_checkbox')
-        ingredients = []
+        ingredients = ''
         for ingredient in recipe_ingredients:
             title = ingredient['data-intredient-title']
             count = ingredient['data-amount']
-            ingredients.append(f"{title} - {count}")
+            count_name = ingredient['data-unit-title']
+            ingredients += f"{title} {count} {count_name}\n"
         recipe['ingredients'] = ingredients
         recipe['category'] = category
+        soup = get_soup(response_ingredients)
+        descriptions_soup = soup.find_all('div', class_='plain-text recipe_step_text')
+        description = ""
+        for count, d in enumerate(descriptions_soup):
+            description += '\n' + f'{count+1}. {d.get_text()} '
+        recipe['description'] = description
         if 'title' in recipe:
             recipes.append(recipe)
     return recipes
+
+
+def get_random_recipe():
+    "Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"
+    recipes = Recipe.objects.all()
+    random_recipe = random.choice(recipes)
+    return random_recipe
 
 
 def get_recipes_by_categories():
@@ -70,4 +85,23 @@ def get_recipes_by_categories():
     return recipes_by_categories
 
 
-pprint(get_recipes_by_categories())
+def save_recipes():
+    recipes = get_recipes_by_categories()
+    # pprint(recipes)
+    for recipe in recipes:
+        picture = recipe['picture']
+        title = recipe['title']
+        ingredients = recipe['ingredients']
+        description = recipe['description']
+        category = recipe['category']
+        if category == 'детское меню':
+            selected_category = 'k'
+        elif category == 'вегетарианские рецепты':
+            selected_category = 'v'
+        elif category == 'диабетические рецепты':
+            selected_category = 'd'
+        elif category == 'веганские рецепты':
+            selected_category = 'a'
+        else:
+            selected_category = 'u'
+        Recipe.objects.create(picture=picture, description=description, category=selected_category, title=title, ingredients=ingredients)
