@@ -59,6 +59,20 @@ class Chat(models.Model):
         cls.objects.filter(chat_id=chat_id).update(phone_number=phone_number)
         return phone_number
 
+    @classmethod
+    def add_likes_recipe(cls, chat_id, recipe):
+        "Поставить лайк рецепту, параметрами передаются объкт Recipe и номер чата"
+
+        chat = Chat.objects.get(chat_id=chat_id)
+        chat.likes.add(recipe)
+
+    @classmethod
+    def add_dislikes_recipe(cls, chat_id, recipe):
+        "Поставить дизлайк рецепту, параметрами передаются объкт Recipe и номер чата"
+
+        chat = Chat.objects.get(chat_id=chat_id)
+        chat.dislikes.add(recipe)
+
     # @classmethod
     # def normalize_phone_number(cls, phone_number):
     #     try:
@@ -90,17 +104,19 @@ class Recipe(models.Model):
         ('i', 'indifferent'))
     picture = models.CharField(max_length=255, default='')
     title = models.CharField(max_length=255, default='')
-    ingredients = models.TextField(max_length=255, default='')
-    description = models.TextField(max_length=255, default='a', null=True)
+    ingredients = models.TextField(max_length=400, default='')
+    description = models.TextField(max_length=1000, default='a', null=True)
     category = models.CharField(choices=categories, max_length=10)
     reaction = models.CharField(choices=reactions, max_length=10, default='i')
+    like = models.ManyToManyField(Chat, related_name='likes')
+    dislike = models.ManyToManyField(Chat, related_name='dislikes')
     chats = models.ManyToManyField(
         Chat,  
         related_name='recipes',
         blank=True)
 
     def __repr__(self):
-        return self.description
+        return self.title
 
     # def get_ingredients(self):
     #     return self.ingredients.all()
@@ -123,6 +139,20 @@ class Recipe(models.Model):
         "Возвращает QuerySet, рандомных категорий которые есть в БД"
 
         return cls.objects.all().values('category').distinct()
+
+    # @classmethod
+    # def add_likes_chat(cls, chat_id, recipe):
+    #     "Поставить лайк рецепту, параметрами передаются объкт Recipe и номер чата"
+    #
+    #     chat = Chat.objects.get(chat_id=chat_id)
+    #     recipe.like.add(chat)
+    #
+    # @classmethod
+    # def add_dislikes_chat(cls, chat_id, recipe):
+    #     "Поставить дизлайк рецепту, параметрами передаются объкт Recipe и номер чата"
+    #
+    #     chat = Chat.objects.get(chat_id=chat_id)
+    #     recipe.dislike.add(chat)
 
 
 

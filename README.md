@@ -38,7 +38,7 @@ python manage.py shell
 В shell пропишите следующие строчки:
 ```
 from recipe_bot.models import Chat, Recipe
-from parser import *
+from recipes_parser import *
 save_recipes()
 ```
 Подождите 2 минуты
