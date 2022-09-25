@@ -6,3 +6,5 @@ python-dotenv==0.20.*
 python-telegram-bot==13.*
 pathvalidate==2.5.2
 phonenumbers==8.12.2
+beautifulsoup4==4.11.1
+lxml==4.9.1
