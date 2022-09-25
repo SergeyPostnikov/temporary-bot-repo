@@ -97,7 +97,11 @@ else:
             'NAME': os.getenv('DB_NAME'),
             'USER': os.getenv('DB_USER'),
             'PASSWORD': os.getenv('DB_PASSWORD'),
-        }   
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'" 
+            },
+        }
+
     }
 
 
