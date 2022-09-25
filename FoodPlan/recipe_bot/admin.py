@@ -1,22 +1,19 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import Chat, Recipe
+from .models import Category, Chat, Recipe
 
 
-@admin.register(Chat)  # Регистрируем модель категории с помошью декоратора
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('username', 'categories', 'phone_number', 'chat_id', 'likes')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
-    # list_display_links = ('name', 'categories')  # Указывается поле которое будет ссылкой на выбранную категорию
-    raw_id_fields = ('likes', 'dislikes')
+    list_display = ('name',)
 
-@admin.register(Recipe)  # Регистрируем модель категории с помошью декоратора
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('title', 'picture', 'description', 'category', 'ingredients', 'reaction')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
+@admin.register(Chat)
+class ChatAdmin(admin.ModelAdmin):
+    list_display = ('username', 'phone_number', 'chat_id')
+
+@admin.register(Recipe)
+class RecipeAdmin(admin.ModelAdmin):
+    list_display = ('title', 'picture', 'description', 'ingredients')
     list_display_links = ('title', 'description')
-    raw_id_fields = ('like', 'dislike')
-
-# @admin.register(Ingredient)  # Регистрируем модель категории с помошью декоратора
-# class CategoryAdmin(admin.ModelAdmin):
-#     list_display = ('name', 'amount', 'measure')  # Отображение нужных нам столбцов в Админ, порядок как сдесь
-
+    raw_id_fields = ('category',)

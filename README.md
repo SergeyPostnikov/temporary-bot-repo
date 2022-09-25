@@ -38,11 +38,12 @@ python manage.py shell
 В shell пропишите следующие строчки:
 ```
 from recipe_bot.models import Chat, Recipe
-from recipes_parser import *
-save_recipes()
+import recipes_parser
+recipes_parser.save_recipes()
+
 ```
 Подождите 2 минуты
 
 ### Цель проекта
 
-Код написан в образовательных целях на онлайн-курсе для веб-разработчиков [dvmn.org](https://dvmn.org/).
+Код написан в образовательных целях d рамках командного проекта на онлайн-курсе для веб-разработчиков [dvmn.org](https://dvmn.org/).
