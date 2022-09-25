@@ -55,8 +55,9 @@ class Chat(models.Model):
 
     @classmethod
     def get_like_recipes_titles(cls, chat_id):
-        queryset = cls.objects.get(chat_id=chat_id).likes.all().values('title')
-        return [item['title'] for item in queryset]
+        chat_likes = cls.objects.get(chat_id=chat_id).likes.all().values('title')
+        titles = sorted([recipe['title'] for recipe in chat_likes.iterator()])
+        return [f'{title_number}. {title}' for title_number, title in enumerate(titles, 1)]
 
     @classmethod
     def get_chat_recipe_category(cls, chat_id):
@@ -109,19 +110,12 @@ class Chat(models.Model):
         chat.likes.add(recipe)
 
     @classmethod
-    def add_dislikes_recipe(cls, chat_id, recipe):
-        "Поставить дизлайк рецепту, параметрами передаются объкт Recipe и номер чата"
+    def add_recipe_dislike(cls, chat_id):
+        """Поставить дизлайк рецепту c recipe_id из указанного чата"""
 
         chat = Chat.objects.get(chat_id=chat_id)
+        recipe = Recipe.objects.get(id=chat.recipe_id)
         chat.dislikes.add(recipe)
-
-    @classmethod
-    def get_likes_recipes(cls, chat_id):
-        "Получить рецепты где стоит лайк, параметрами передаются номер чата"
-
-        chat = Chat.objects.get(chat_id=chat_id)
-        return chat.likes.all()
-
 
     def __repr__(self):
         return self.username
@@ -153,12 +147,12 @@ class Recipe(models.Model):
 
     @classmethod
     def get_random_recipe(cls, chat_id):
-        "Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"
+        """Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"""
+
         chat = Chat.objects.get(chat_id=chat_id)
-        dislike_recipe = chat.dislikes.all()
-        # recipes = cls.objects.all()
-        recipe = Recipe.objects.exclude(pk__in=dislike_recipe)
-        random_recipe = random.choice(recipe)
+        dislike_recipes = chat.dislikes.all()
+        recipes = Recipe.objects.exclude(pk__in=dislike_recipes)
+        random_recipe = random.choice(recipes)
         return random_recipe
 
     @classmethod

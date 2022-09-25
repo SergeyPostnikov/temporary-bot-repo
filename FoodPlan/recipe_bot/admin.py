@@ -8,9 +8,12 @@ from .models import Category, Chat, Recipe
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
+
 @admin.register(Chat)
 class ChatAdmin(admin.ModelAdmin):
     list_display = ('username', 'phone_number', 'chat_id', 'category', 'recipe_id')
+    raw_id_fields = ('likes', 'dislikes',)
+
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):

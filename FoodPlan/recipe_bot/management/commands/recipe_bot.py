@@ -401,6 +401,8 @@ class Command(BaseCommand):
         self.send_main_menu(update, context)
 
     def update_dislike_in_db(self, update: Update, context: CallbackContext):
+        chat_id = self.get_chat_id_from_bot(update)
+        Chat.add_recipe_dislike(chat_id=chat_id)
         self.send_main_menu(update, context)
 
     def open_private_office(self, update: Update, context: CallbackContext):
