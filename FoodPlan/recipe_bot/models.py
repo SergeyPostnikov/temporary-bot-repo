@@ -160,6 +160,8 @@ class Recipe(models.Model):
         else:
             recipes = Recipe.objects.exclude(pk__in=dislike_recipes)
         random_recipe = random.choice(recipes)
+        chat.count_show_recipe += 1   # Счетчик кол-ва показов рецептов у пользователя
+        chat.save()
         return random_recipe
 
     @classmethod
