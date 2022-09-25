@@ -2,6 +2,7 @@
 import random
 
 from django.db import models
+from django.db.models import Q
 # from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -85,6 +86,28 @@ class Chat(models.Model):
         cls.objects.filter(chat_id=chat_id).update(phone_number=phone_number)
         return phone_number
 
+    @classmethod
+    def add_likes_recipe(cls, chat_id, recipe):
+        "Поставить лайк рецепту, параметрами передаются объкт Recipe и номер чата"
+
+        chat = Chat.objects.get(chat_id=chat_id)
+        chat.likes.add(recipe)
+
+    @classmethod
+    def add_dislikes_recipe(cls, chat_id, recipe):
+        "Поставить дизлайк рецепту, параметрами передаются объкт Recipe и номер чата"
+
+        chat = Chat.objects.get(chat_id=chat_id)
+        chat.dislikes.add(recipe)
+
+    @classmethod
+    def get_likes_recipes(cls, chat_id):
+        "Получить рецепты где стоит лайк, параметрами передаются номер чата"
+
+        chat = Chat.objects.get(chat_id=chat_id)
+        return chat.likes.all()
+
+
     def __repr__(self):
         return self.username
 
@@ -94,21 +117,24 @@ class Recipe(models.Model):
 
     picture = models.CharField(max_length=255, default='')
     title = models.CharField(max_length=255, default='')
-    ingredients = models.TextField(max_length=255, default='')
-    description = models.TextField(max_length=255, default='a', null=True)
+    ingredients = models.TextField(max_length=400, default='')
+    description = models.TextField(max_length=1000, default='a', null=True)
+    like = models.ManyToManyField(Chat, related_name='likes')
+    dislike = models.ManyToManyField(Chat, related_name='dislikes')
     category = models.ForeignKey(
         Category,
         related_name='recipes',
         verbose_name='Категория рецепта',
         on_delete=models.CASCADE
     )
+
     chats = models.ManyToManyField(
         Chat,  
         related_name='recipes',
         blank=True)
 
     def __repr__(self):
-        return self.description
+        return self.title
 
     # def get_ingredients(self):
     #     return self.ingredients.all()
@@ -119,11 +145,13 @@ class Recipe(models.Model):
         return recipes
 
     @classmethod
-    def get_random_recipe(cls):
+    def get_random_recipe(cls, chat_id):
         "Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"
-
-        recipes = cls.objects.all()
-        random_recipe = random.choice(recipes)
+        chat = Chat.objects.get(chat_id=chat_id)
+        dislike_recipe = chat.dislikes.all()
+        # recipes = cls.objects.all()
+        recipe = Recipe.objects.exclude(pk__in=dislike_recipe)
+        random_recipe = random.choice(recipe)
         return random_recipe
 
     @classmethod
@@ -131,3 +159,4 @@ class Recipe(models.Model):
         "Возвращает QuerySet, рандомных категорий которые есть в БД"
 
         return cls.objects.all().values('category').distinct()
+
