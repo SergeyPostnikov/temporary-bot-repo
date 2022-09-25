@@ -303,52 +303,63 @@ class Command(BaseCommand):
         chat_id = self.get_chat_id_from_bot(update)
         Chat.update_phone_number(chat_id=chat_id, phone_number=phone_number)
 
-    def send_main_menu(self, update: Update, context: CallbackContext):
+    def send_main_menu(self, update: Update, context: CallbackContext,
+                       text: str = 'Выберите:'):
         keyboard = [
             [
-                InlineKeyboardButton('Новый рецепт', callback_data='new'),
+                InlineKeyboardButton('Показать рецепт', callback_data='recipe'),
+                InlineKeyboardButton('Выбрать категорию рецепта', callback_data='category'),
+            ],
+            [
                 InlineKeyboardButton('Личный кабинет', callback_data='private'),
             ],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         self.update_dialogue_stage_in_db(update, MAIN_MENU_STAGE)
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text='Выберите:', reply_markup=reply_markup)
+                                 text=text, reply_markup=reply_markup)
 
     def handle_main_menu(self, update: Update, context: CallbackContext):
         query = update.callback_query
         variant = query.data
-        if variant == 'new':
-            self.publish_recipe_in_chat(update, context)
-        else:
-            self.open_private_office(update, context)
+        methods = {
+            'recipe': self.publish_recipe_in_chat,
+            'category': self.send_category_selection_menu,
+            'private': self.open_private_office,
+        }
+        methods[variant](update, context)
 
     def publish_recipe_in_chat(self, update: Update,
                                context: CallbackContext):
         recipe = Recipe.get_random_recipe()
-        message = ('Вот ваш сегодняшний рецепт:\n\n'
-                   f'{recipe.title}\n\n')
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text=message,
-                                 parse_mode='Markdown')
 
-        image_filename = '150518-ed4_wide.jpg'
-        app_dirpath = apps.get_app_config(APP_NAME).path
-        static_subfolder = settings.STATIC_URL.strip('/')
-        image_subfolder = 'images'
-        image_filepath = (
-            Path(app_dirpath) /
-            static_subfolder /
-            image_subfolder /
-            image_filename
-        )
+        context.bot.send_photo(chat_id=update.effective_chat.id,
+                               photo=recipe.picture,
+                               caption=f'\n\n*{recipe.title}*\n\n',
+                               parse_mode='Markdown')
 
-        # self.send_file_to_chat(update, context, image_filepath)
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo=recipe.picture)
-        message = (f'Ингредиенты:\n\n{recipe.ingredients}\n\n способ приготовления:\n{recipe.description}')
+        recipe_text = ('_Ингредиенты_\n\n'
+                       f'{recipe.ingredients}\n'
+                       '_Способ приготовления_\n'
+                       f'{recipe.description}')
+        
+        keyboard = [
+            [
+                InlineKeyboardButton('👍', callback_data='like'),
+                InlineKeyboardButton('👎', callback_data='dislike'),
+            ],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text=message, parse_mode='Markdown')
+                                 text=recipe_text,
+                                 parse_mode='Markdown',
+                                 reply_markup=reply_markup)
+
+    def send_category_selection_menu(self, update: Update, context: CallbackContext):
+        text = 'Пока здесь ничего нет. Программист не написал выбор категории'
+        self.send_main_menu(update, context, text=text)
 
     def open_private_office(self, update: Update, context: CallbackContext):
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text='Это личный кабинет') #, reply_markup=reply_markup)
+        text = 'Пока здесь ничего нет. Программист не написал личный кабинет'
+        # text = 'Пока здесь ничего нет. Вы не лайкнули ни одного рецепта'
+        self.send_main_menu(update, context, text=text)

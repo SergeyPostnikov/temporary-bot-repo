@@ -1,7 +1,7 @@
 from pprint import pprint
 import random
 
-from recipe_bot.models import Chat, Recipe
+from recipe_bot.models import Category, Recipe
 import requests
 from bs4 import BeautifulSoup as b
 
@@ -88,20 +88,17 @@ def get_recipes_by_categories():
 def save_recipes():
     recipes = get_recipes_by_categories()
     # pprint(recipes)
+    categories_in_db = ['Вегетарианские', 'Диабетические', 'Веганские', 'Детское меню']
     for recipe in recipes:
         picture = recipe['picture']
         title = recipe['title']
         ingredients = recipe['ingredients']
         description = recipe['description']
-        category = recipe['category']
-        if category == 'детское меню':
-            selected_category = 'k'
-        elif category == 'вегетарианские рецепты':
-            selected_category = 'v'
-        elif category == 'диабетические рецепты':
-            selected_category = 'd'
-        elif category == 'веганские рецепты':
-            selected_category = 'a'
+        if recipe['category'] in categories:
+            category_index = categories.index(recipe['category'])
+            category_name = categories_in_db[category_index]
         else:
-            selected_category = 'u'
-        Recipe.objects.create(picture=picture, description=description, category=selected_category, title=title, ingredients=ingredients)
+            category_name = 'Обычные'
+        Category.objects.get_or_create(name=category_name)
+        category = Category.objects.get(name=category_name)
+        Recipe.objects.create(picture=picture, description=description, category=category, title=title, ingredients=ingredients)

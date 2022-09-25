@@ -5,20 +5,24 @@ from django.db import models
 # from phonenumber_field.modelfields import PhoneNumberField
 
 
+class Category(models.Model):
+    """Категория рецепта"""
+
+    name = models.CharField(max_length=120, blank=False)
+
+    def __repr__(self):
+        return self.name
+
 class Chat(models.Model):
-    categories = (
-        ('a', 'all'), 
-        ('u', 'usual'), 
-        ('v', 'vegeterian'), 
-        ('k', 'for kids'))
+    """Чат в Telegram'е"""
+
     chat_id = models.CharField('Id чата с пользователем', max_length=64, 
                                db_index=True, null=False, blank=False)
-    username = models.CharField('Username пользователя',
+    username = models.CharField('Имя пользователя',
                                 max_length=128, null=False, blank=True)
     phone_number = models.CharField('Номер телефона пользователя', max_length=16, 
                                     default='', null=False, blank=True)
-    dialogue_stage = models.IntegerField('Этап диалога с ботом', default=0)
-    preference = models.CharField(choices=categories, default='a', max_length=10)
+    dialogue_stage = models.IntegerField('Этап диалога пользователя с ботом', default=0)
 
     @classmethod
     def get_or_create_chat(cls, chat_id, username=''):
@@ -59,41 +63,23 @@ class Chat(models.Model):
         cls.objects.filter(chat_id=chat_id).update(phone_number=phone_number)
         return phone_number
 
-    # @classmethod
-    # def normalize_phone_number(cls, phone_number):
-    #     try:
-    #         pure_phone = phonenumbers.parse(phone_number, 'RU')
-    #     except phonenumbers.NumberParseException:
-    #         pure_phone = ''
-
-    #     if phonenumbers.is_valid_number(pure_phone):
-    #         pure_phone = phonenumbers.format_number(
-    #             pure_phone,
-    #             phonenumbers.PhoneNumberFormat.E164
-    #         )
-    #     return pure_phone
-
     def __repr__(self):
         return self.username
 
 
 class Recipe(models.Model):
-    categories = (
-        ('u', 'usual'), 
-        ('v', 'vegeterian'), 
-        ('k', 'for kids'),
-        ('d', 'dietary'),
-        ('a', 'vegan'))
-    reactions = (
-        ('l', 'like'), 
-        ('d', 'dislike'), 
-        ('i', 'indifferent'))
+    """Рецепт блюда"""
+
     picture = models.CharField(max_length=255, default='')
     title = models.CharField(max_length=255, default='')
     ingredients = models.TextField(max_length=255, default='')
     description = models.TextField(max_length=255, default='a', null=True)
-    category = models.CharField(choices=categories, max_length=10)
-    reaction = models.CharField(choices=reactions, max_length=10, default='i')
+    category = models.ForeignKey(
+        Category,
+        related_name='recipes',
+        verbose_name='Категория рецепта',
+        on_delete=models.CASCADE
+    )
     chats = models.ManyToManyField(
         Chat,  
         related_name='recipes',
@@ -123,35 +109,3 @@ class Recipe(models.Model):
         "Возвращает QuerySet, рандомных категорий которые есть в БД"
 
         return cls.objects.all().values('category').distinct()
-
-
-
-# class Ingredient(models.Model):
-#     name = models.CharField(max_length=255, blank=False)
-#     amount = models.FloatField(blank=False)
-#     measure = models.CharField(max_length=10, blank=False)
-#     recipe = models.ForeignKey(
-#         'Recipe',
-#         related_name='ingredients',
-#         on_delete=models.CASCADE)
-#
-#     def __repr__(self):
-#         return self.name
-
-
-# функционал модели
-# регистрировать юзера
-# регистрировать рецепт
-# выдавать рецепт
-# ставить лайк/dislike
-
-# if __name__ == '__main__':
-#     from recipe_bot.models import *
-#     user = User.create_user('Steve Jobs', phone_number='6666336626')
-#
-#     potatoes = Recipe.objects.create(description='Жареная картошка')
-#     potato = Ingredient.objects.create(name='картошка', amount=4, recipe=potatoes, measure='шт')
-#     oil = Ingredient.objects.create(name='масло', amount=5, recipe=potatoes, measure='мл')
-#     salt = Ingredient.objects.create(name='соль', amount=1, recipe=potatoes, measure='ч.л.')
-#
-#     print(potatoes.get_ingredients())
