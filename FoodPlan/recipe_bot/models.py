@@ -2,6 +2,7 @@
 import random
 
 from django.db import models
+from django.db.models import Q
 # from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -122,11 +123,13 @@ class Recipe(models.Model):
         return recipes
 
     @classmethod
-    def get_random_recipe(cls):
+    def get_random_recipe(cls, chat_id):
         "Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"
-
-        recipes = cls.objects.all()
-        random_recipe = random.choice(recipes)
+        chat = Chat.objects.get(chat_id=chat_id)
+        dislike_recipe = chat.dislikes.all()
+        # recipes = cls.objects.all()
+        recipe = Recipe.objects.exclude(pk__in=dislike_recipe)
+        random_recipe = random.choice(recipe)
         return random_recipe
 
     @classmethod
