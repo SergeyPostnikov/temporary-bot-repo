@@ -13,7 +13,7 @@ from telegram.error import NetworkError
 from telegram.ext import CallbackContext, CallbackQueryHandler, Filters
 from telegram.ext import MessageHandler, Updater
 
-from ...models import Chat
+from ...models import Chat, Recipe
 
 
 logger = logging.getLogger(__file__)
@@ -325,8 +325,9 @@ class Command(BaseCommand):
 
     def publish_recipe_in_chat(self, update: Update,
                                context: CallbackContext):
+        recipe = Recipe.get_random_recipe()
         message = ('Вот ваш сегодняшний рецепт:\n\n'
-                   '*Алкогольный крюшон в арбузе*\n\n')
+                   f'{recipe.title}\n\n')
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  text=message,
                                  parse_mode='Markdown')
@@ -342,32 +343,9 @@ class Command(BaseCommand):
             image_filename
         )
 
-        self.send_file_to_chat(update, context, image_filepath)
-
-        message = ('\n*Ингредиенты:*\n'
-                   'арбузы - 1 шт.\n'
-                   'вино белое сухое - ½ бутылки\n'
-                   'шампанское - ½ бутылки\n'
-                   'лимоны - по вкусу\n'
-                   'сахар - по вкусу\n'
-                   'коньяк - 100 мл\n'
-                   '\n*Приготовление:*\n'
-                   '1. Для приготовления крюшона выберите большой круглый '
-                   'арбуз. Срежьте у него верх, чтобы получилась глубокая '
-                   'чаша. Для устойчивости также можно срезать немного корки '
-                   'с основания.\n'
-                   '2. С помощью миниатюрной ложки-нуазетки вырежьте из '
-                   'мякоти арбуза небольшие шарики. Если специального '
-                   'приспособления нет, можно просто нарезать мякоть '
-                   'кубиками, предварительно удалив семечки.\n'
-                   '3. Удалите лишнюю мякоть из чаши. Влейте алкогольные '
-                   'напитки, добавьте арбузные шарики, дольки лимона и '
-                   'сахар по вкусу. Также советуем положить в классический '
-                   'крюшон в арбузе немного свежих ягод.\n'
-                   '4. Классический рецепт можно изменить, заменив коньяк '
-                   'на ром, а шампанское — на газированную воду. Алкогольный '
-                   'крюшон в арбузе подают охлажденным и разливают по '
-                   'бокалам небольшим половником.\n')
+        # self.send_file_to_chat(update, context, image_filepath)
+        context.bot.send_photo(chat_id=update.effective_chat.id, photo=recipe.picture)
+        message = (f'Ингредиенты:\n\n{recipe.ingredients}\n\n способ приготовления:\n{recipe.description}')
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  text=message, parse_mode='Markdown')
 

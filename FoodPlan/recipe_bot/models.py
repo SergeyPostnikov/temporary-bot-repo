@@ -1,4 +1,6 @@
 # import phonenumbers
+import random
+
 from django.db import models
 # from phonenumber_field.modelfields import PhoneNumberField
 
@@ -79,15 +81,19 @@ class Recipe(models.Model):
     categories = (
         ('u', 'usual'), 
         ('v', 'vegeterian'), 
-        ('k', 'for kids'))
+        ('k', 'for kids'),
+        ('d', 'dietary'),
+        ('a', 'vegan'))
     reactions = (
         ('l', 'like'), 
         ('d', 'dislike'), 
         ('i', 'indifferent'))
-    picture = models.ImageField(upload_to=None)
-    description = models.TextField(max_length=255)
+    picture = models.CharField(max_length=255, default='')
+    title = models.CharField(max_length=255, default='')
+    ingredients = models.TextField(max_length=255, default='')
+    description = models.TextField(max_length=255, default='a', null=True)
     category = models.CharField(choices=categories, max_length=10)
-    reaction = models.CharField(choices=reactions, max_length=10)
+    reaction = models.CharField(choices=reactions, max_length=10, default='i')
     chats = models.ManyToManyField(
         Chat,  
         related_name='recipes',
@@ -96,26 +102,41 @@ class Recipe(models.Model):
     def __repr__(self):
         return self.description
 
-    def get_ingredients(self):
-        return self.ingredients.all()
+    # def get_ingredients(self):
+    #     return self.ingredients.all()
 
     def get_recipe(cls, user):
         pref = user.preferences
         recipes = cls.objects.filter(category__in=pref)
         return recipes
 
+    @classmethod
+    def get_random_recipe(cls):
+        "Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"
 
-class Ingredient(models.Model):
-    name = models.CharField(max_length=255, blank=False)
-    amount = models.FloatField(blank=False)
-    measure = models.CharField(max_length=10, blank=False)
-    recipe = models.ForeignKey(
-        'Recipe', 
-        related_name='ingredients', 
-        on_delete=models.CASCADE)
+        recipes = cls.objects.all()
+        random_recipe = random.choice(recipes)
+        return random_recipe
 
-    def __repr__(self):
-        return self.name
+    @classmethod
+    def get_all_random_category(cls):
+        "Возвращает QuerySet, рандомных категорий которые есть в БД"
+
+        return cls.objects.all().values('category').distinct()
+
+
+
+# class Ingredient(models.Model):
+#     name = models.CharField(max_length=255, blank=False)
+#     amount = models.FloatField(blank=False)
+#     measure = models.CharField(max_length=10, blank=False)
+#     recipe = models.ForeignKey(
+#         'Recipe',
+#         related_name='ingredients',
+#         on_delete=models.CASCADE)
+#
+#     def __repr__(self):
+#         return self.name
 
 
 # функционал модели
@@ -124,13 +145,13 @@ class Ingredient(models.Model):
 # выдавать рецепт
 # ставить лайк/dislike
 
-if __name__ == '__main__':
-    from recipe_bot.models import *
-    user = User.create_user('Steve Jobs', phone_number='6666336626')
-
-    potatoes = Recipe.objects.create(description='Жареная картошка')
-    potato = Ingredient.objects.create(name='картошка', amount=4, recipe=potatoes, measure='шт')
-    oil = Ingredient.objects.create(name='масло', amount=5, recipe=potatoes, measure='мл')
-    salt = Ingredient.objects.create(name='соль', amount=1, recipe=potatoes, measure='ч.л.')
-
-    print(potatoes.get_ingredients())
+# if __name__ == '__main__':
+#     from recipe_bot.models import *
+#     user = User.create_user('Steve Jobs', phone_number='6666336626')
+#
+#     potatoes = Recipe.objects.create(description='Жареная картошка')
+#     potato = Ingredient.objects.create(name='картошка', amount=4, recipe=potatoes, measure='шт')
+#     oil = Ingredient.objects.create(name='масло', amount=5, recipe=potatoes, measure='мл')
+#     salt = Ingredient.objects.create(name='соль', amount=1, recipe=potatoes, measure='ч.л.')
+#
+#     print(potatoes.get_ingredients())
