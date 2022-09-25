@@ -77,6 +77,13 @@ class Chat(models.Model):
         chat = Chat.objects.get(chat_id=chat_id)
         chat.dislikes.add(recipe)
 
+    @classmethod
+    def get_likes_recipes(cls, chat_id):
+        "Получить рецепты где стоит лайк, параметрами передаются номер чата"
+
+        chat = Chat.objects.get(chat_id=chat_id)
+        return chat.likes.all()
+
 
     def __repr__(self):
         return self.username
