@@ -11,7 +11,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Chat)
 class ChatAdmin(admin.ModelAdmin):
-    list_display = ('username', 'phone_number', 'chat_id')
+    list_display = ('username', 'phone_number', 'chat_id', 'category')
 
 
 @admin.register(Recipe)

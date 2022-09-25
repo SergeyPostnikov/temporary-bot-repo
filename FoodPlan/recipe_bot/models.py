@@ -8,7 +8,13 @@ from django.db import models
 class Category(models.Model):
     """Категория рецепта"""
 
-    name = models.CharField(max_length=120, blank=False)
+    name = models.CharField('Наименование категории рецепта', max_length=120,
+                            db_index=True, null=False, blank=False)
+
+    @classmethod
+    def get_all_categories_names(cls):
+        categories = cls.objects.all()
+        return [category.name for category in categories]
 
     def __repr__(self):
         return self.name
@@ -23,6 +29,8 @@ class Chat(models.Model):
     phone_number = models.CharField('Номер телефона пользователя', max_length=16, 
                                     default='', null=False, blank=True)
     dialogue_stage = models.IntegerField('Этап диалога пользователя с ботом', default=0)
+    category = models.CharField('Выбранная категория рецептов', max_length=120, 
+                                null=False, blank=True, default='')
 
     @classmethod
     def get_or_create_chat(cls, chat_id, username=''):
@@ -31,11 +39,11 @@ class Chat(models.Model):
     @classmethod
     def get_chat_details(cls, chat_id):
         chats = cls.objects.filter(chat_id=chat_id)
-        if not chats:
+        if len(chats) != 1:
             return None
 
         chat_details = {
-            'chat_id': chats[0].chat_id,
+            'chat_id': chat_id,
             'username': chats[0].username,
             'phone_number': chats[0].phone_number,            
             'dialogue_stage': chats[0].dialogue_stage,
@@ -43,11 +51,25 @@ class Chat(models.Model):
         return chat_details
 
     @classmethod
+    def get_chat_recipe_category(cls, chat_id):
+        chats = cls.objects.filter(chat_id=chat_id).values('category')
+        if len(chats) != 1:
+            return None
+        return chats[0]['category']
+
+    @classmethod
     def update_dialogue_stage(cls, chat_id, dialogue_stage):
         if cls.objects.filter(chat_id=chat_id).count() != 1:
             return None
         cls.objects.filter(chat_id=chat_id).update(dialogue_stage=dialogue_stage)
         return dialogue_stage
+
+    @classmethod
+    def update_recipe_category(cls, chat_id, category):
+        if cls.objects.filter(chat_id=chat_id).count() != 1:
+            return None
+        cls.objects.filter(chat_id=chat_id).update(category=category)
+        return category
 
     @classmethod
     def update_username(cls, chat_id, username):

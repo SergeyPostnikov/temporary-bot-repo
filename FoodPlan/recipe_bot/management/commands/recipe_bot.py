@@ -13,7 +13,7 @@ from telegram.error import NetworkError
 from telegram.ext import CallbackContext, CallbackQueryHandler, Filters
 from telegram.ext import MessageHandler, Updater
 
-from ...models import Chat, Recipe
+from ...models import Category, Chat, Recipe
 
 
 logger = logging.getLogger(__file__)
@@ -25,6 +25,7 @@ CONSENT_PERSONAL_DATA_STAGE = 1
 USERNAME_INPUT_STAGE = 2
 PHONE_SENDING_STAGE = 3
 MAIN_MENU_STAGE = 4
+RECIPE_CATEGORY_MENU_STAGE = 5
 
 
 class Command(BaseCommand):
@@ -53,6 +54,7 @@ class Command(BaseCommand):
             USERNAME_INPUT_STAGE: self.handle_username_input,
             PHONE_SENDING_STAGE: self.handle_phone_sending,
             MAIN_MENU_STAGE: self.handle_main_menu,
+            RECIPE_CATEGORY_MENU_STAGE: self.handle_recipe_category_menu
         }
 
     def handle(self, *args, **kwargs):
@@ -324,7 +326,7 @@ class Command(BaseCommand):
         variant = query.data
         methods = {
             'recipe': self.publish_recipe_in_chat,
-            'category': self.send_category_selection_menu,
+            'category': self.send_recipe_category_menu,
             'private': self.open_private_office,
         }
         methods[variant](update, context)
@@ -355,8 +357,38 @@ class Command(BaseCommand):
                                  parse_mode='Markdown',
                                  reply_markup=reply_markup)
 
-    def send_category_selection_menu(self, update: Update, context: CallbackContext):
-        text = 'Пока здесь ничего нет. Программист не написал выбор категории'
+    def send_recipe_category_menu(self, update: Update, context: CallbackContext):
+        chat_id = self.get_chat_id_from_bot(update)
+        chat_recipe_category = Chat.get_chat_recipe_category(chat_id=chat_id)
+        if chat_recipe_category:
+            text = (f'Выбрана категория рецептов: {chat_recipe_category}\n'
+                    'Можете выбрать другую категорию:')
+        else:
+            text = ('Категория рецептов пока не выбрана\n'
+                    'Выберите категорию:')
+
+        all_recipe_categories = Category.get_all_categories_names()
+        all_recipe_categories.append('Все')
+        keyboard = []
+        for category_index, category_name in enumerate(all_recipe_categories):
+            if not category_index % 3:
+                keyboard.append([])
+            keyboard[-1].append(InlineKeyboardButton(category_name,
+                                                     callback_data=category_name))
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        self.update_dialogue_stage_in_db(update, RECIPE_CATEGORY_MENU_STAGE)
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 text=text, reply_markup=reply_markup)
+
+    def handle_recipe_category_menu(self, update: Update, context: CallbackContext):
+        query = update.callback_query
+        category_name = query.data
+        text = f'Выбрана категория рецептов: {category_name}'
+        if category_name == 'Все':
+            category_name = ''
+        chat_id = self.get_chat_id_from_bot(update)
+        Chat.update_recipe_category(chat_id=chat_id, category=category_name)
         self.send_main_menu(update, context, text=text)
 
     def open_private_office(self, update: Update, context: CallbackContext):
