@@ -34,6 +34,8 @@ class Chat(models.Model):
                                 null=False, blank=True, default='')
     recipe_id = models.IntegerField('Просматриваемый рецепт', default=-1,
                                     null=False, blank=True)
+    chat_date = models.DateField('Дата диалога с пользователем', auto_now=True)
+    count_show_recipe = models.IntegerField('Кол-во показанных рецептов', default=0)
 
     @classmethod
     def get_or_create_chat(cls, chat_id, username=''):
