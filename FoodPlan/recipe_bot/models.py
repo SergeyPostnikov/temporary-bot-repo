@@ -1,5 +1,6 @@
 # import phonenumbers
 import random
+import datetime
 
 from django.db import models
 from django.db.models import Q
@@ -34,7 +35,7 @@ class Chat(models.Model):
                                 null=False, blank=True, default='')
     recipe_id = models.IntegerField('Просматриваемый рецепт', default=-1,
                                     null=False, blank=True)
-    chat_date = models.DateField('Дата диалога с пользователем', auto_now=True)
+    chat_date = models.DateField('Дата диалога с пользователем', auto_now=False)
     count_show_recipe = models.IntegerField('Кол-во показанных рецептов', default=0)
 
     @classmethod
@@ -161,6 +162,9 @@ class Recipe(models.Model):
             recipes = Recipe.objects.exclude(pk__in=dislike_recipes)
         random_recipe = random.choice(recipes)
         chat.count_show_recipe += 1   # Счетчик кол-ва показов рецептов у пользователя
+        if chat.chat_date != datetime.date.today():
+            chat.count_show_recipe = 0
+        chat.chat_date = datetime.date.today()
         chat.save()
         return random_recipe
 
