@@ -88,7 +88,7 @@ class Recipe(models.Model):
         ('l', 'like'), 
         ('d', 'dislike'), 
         ('i', 'indifferent'))
-    picture = models.ImageField(upload_to=None)
+    picture = models.CharField(max_length=255, default='')
     title = models.CharField(max_length=255, default='')
     ingredients = models.TextField(max_length=255, default='')
     description = models.TextField(max_length=255, default='a', null=True)

@@ -50,19 +50,19 @@ def get_recipes(category, params):
             pass
         soup = get_soup(response_ingredients)
         recipe_ingredients = soup.find_all('input', class_='checkbox__input recipe_ingredient_checkbox')
-        ingredients = []
+        ingredients = ''
         for ingredient in recipe_ingredients:
             title = ingredient['data-intredient-title']
             count = ingredient['data-amount']
             count_name = ingredient['data-unit-title']
-            ingredients.append(f"{title}-{count}-{count_name}")
+            ingredients += f"{title} {count} {count_name}\n"
         recipe['ingredients'] = ingredients
         recipe['category'] = category
         soup = get_soup(response_ingredients)
         descriptions_soup = soup.find_all('div', class_='plain-text recipe_step_text')
         description = ""
         for count, d in enumerate(descriptions_soup):
-            description += f'{count+1}. {d.get_text()} ' + '\n'
+            description += '\n' + f'{count+1}. {d.get_text()} '
         recipe['description'] = description
         if 'title' in recipe:
             recipes.append(recipe)
