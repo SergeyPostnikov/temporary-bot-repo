@@ -101,5 +101,5 @@ def save_recipes():
             category_name = 'Обычные'
         Category.objects.get_or_create(name=category_name)
         category = Category.objects.get(name=category_name)
-        Recipe.objects.create(picture=picture, description=description, category=category, title=title, ingredients=ingredients)
+        Recipe.objects.create(picture=picture, description=description, category=category, title=title, ingredients=ingredients, categories=category_name)
 

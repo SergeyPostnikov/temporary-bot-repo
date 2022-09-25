@@ -136,6 +136,7 @@ class Recipe(models.Model):
         verbose_name='Категория рецепта',
         on_delete=models.PROTECT
     )
+    categories = models.CharField(max_length=255, default='')
 
     def __repr__(self):
         return self.title
@@ -150,8 +151,12 @@ class Recipe(models.Model):
         """Возвращает рандомный обект Recipe, обращаться через точку .title ... .picture .... .description"""
 
         chat = Chat.objects.get(chat_id=chat_id)
+        category = chat.category
         dislike_recipes = chat.dislikes.all()
-        recipes = Recipe.objects.exclude(pk__in=dislike_recipes)
+        if category:
+            recipes = Recipe.objects.filter(categories=category).exclude(pk__in=dislike_recipes)
+        else:
+            recipes = Recipe.objects.exclude(pk__in=dislike_recipes)
         random_recipe = random.choice(recipes)
         return random_recipe
 
