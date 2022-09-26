@@ -70,10 +70,11 @@ class Chat(models.Model):
         """Получает из БД имя пользователя, телефон
            и стадию диалога для чата."""
 
-        chats = cls.objects.filter(chat_id=chat_id)
-        if len(chats) != 1:
+        count = cls.objects.filter(chat_id=chat_id).count()
+        if count != 1:
             return None
 
+        chats = cls.objects.filter(chat_id=chat_id)
         chat_details = {
             'chat_id': chat_id,
             'username': chats[0].username,
