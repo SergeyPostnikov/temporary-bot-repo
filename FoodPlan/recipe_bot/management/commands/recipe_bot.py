@@ -313,7 +313,8 @@ class Command(BaseCommand):
         chat = Chat.objects.get(chat_id=chat_id)
         if chat.chat_date == datetime.date.today() and chat.recipes_count >= 3:
             message = text + '\n\n' if text else ''
-            message = f'{message}Вы уже просмотрели 3 сегодняшних рецепта.'
+            message = (f'{message}Вы уже просмотрели все 3 сегодняшних рецепта.\n'
+                       'Новые рецепты будут доступны вам завтра.')
         else:
             message = text
             keyboard.append(
