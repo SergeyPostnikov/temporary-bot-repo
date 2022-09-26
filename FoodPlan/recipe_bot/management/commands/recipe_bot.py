@@ -85,7 +85,11 @@ class Command(BaseCommand):
 
     def get_chat_details_from_db(self, update: Update) -> dict:
         chat_id = self.get_chat_id_from_bot(update)
-        chat_details = Chat.get_chat_details(chat_id=chat_id)
+        try:
+            chat_details = Chat.get_chat_details(chat_id=chat_id)
+        except Exception as ex:
+            logger.warning(ex)
+            logger.warning(f'chat_id: {chat_id}')
         if chat_details is None:
             self.get_or_create_chat_in_db(update)
             chat_details = Chat.get_chat_details(chat_id=chat_id)
