@@ -47,7 +47,10 @@ def load_recipes_to_db():
                     get_description_and_ingredients(recipe['details_url'])
                 )
                 recipe['category_name'] = category_name
-                save_recipe_in_db(recipe)
+                try:
+                    save_recipe_in_db(recipe)
+                except:
+                    continue
             page_number += 1
             if page_number > soup_pages_count:
                 break
