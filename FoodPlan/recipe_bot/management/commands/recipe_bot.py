@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 
@@ -306,23 +307,32 @@ class Command(BaseCommand):
         Chat.update_phone_number(chat_id=chat_id, phone_number=phone_number)
 
     def send_main_menu(self, update: Update, context: CallbackContext,
-                       text: str = 'Выберите:', keyboard_start: list = None):
+                       text: str = '', keyboard_start: list = None):
         keyboard = [] if keyboard_start is None else keyboard_start
-        keyboard.append(
-            [
-                InlineKeyboardButton('Показать рецепт', callback_data='recipe'),
-                InlineKeyboardButton('Выбрать категорию рецепта', callback_data='category'),
-            ]
-        )
+        chat_id = self.get_chat_id_from_bot(update)
+        chat = Chat.objects.get(chat_id=chat_id)
+        if chat.chat_date == datetime.date.today() and chat.recipes_count >= 3:
+            message = text + '\n\n' if text else ''
+            message = f'{message}Вы уже просмотрели 3 сегодняшних рецепта.'
+        else:
+            message = text
+            keyboard.append(
+                [
+                    InlineKeyboardButton('Показать рецепт', callback_data='recipe'),
+                    InlineKeyboardButton('Выбрать категорию рецепта', callback_data='category'),
+                ]
+            )
         keyboard.append(
             [
                 InlineKeyboardButton('Личный кабинет', callback_data='private'),
             ]
         )
         reply_markup = InlineKeyboardMarkup(keyboard)
+        if not message:
+            message = 'Выберите:'        
         self.update_dialogue_stage_in_db(update, MAIN_MENU_STAGE)
         context.bot.send_message(chat_id=update.effective_chat.id,
-                                 text=text, reply_markup=reply_markup,
+                                 text=message, reply_markup=reply_markup,
                                  parse_mode='Markdown')
 
     def handle_main_menu(self, update: Update, context: CallbackContext):
@@ -363,9 +373,9 @@ class Command(BaseCommand):
 
     def send_recipe_category_menu(self, update: Update, context: CallbackContext):
         chat_id = self.get_chat_id_from_bot(update)
-        chat_recipe_category = Chat.get_chat_recipe_category(chat_id=chat_id)
-        if chat_recipe_category:
-            text = (f'Выбрана категория рецептов: {chat_recipe_category}\n'
+        chat_recipe_category_name = Chat.get_chat_recipe_category_name(chat_id=chat_id)
+        if chat_recipe_category_name:
+            text = (f'Выбрана категория рецептов: {chat_recipe_category_name}\n'
                     'Можете выбрать другую категорию:')
         else:
             text = ('Категория рецептов пока не выбрана\n'
@@ -375,7 +385,7 @@ class Command(BaseCommand):
         all_recipe_categories.append('Все')
         keyboard = []
         for category_index, category_name in enumerate(all_recipe_categories):
-            if not category_index % 3:
+            if not category_index % 2:
                 keyboard.append([])
             keyboard[-1].append(InlineKeyboardButton(category_name,
                                                      callback_data=category_name))
@@ -392,7 +402,7 @@ class Command(BaseCommand):
         if category_name == 'Все':
             category_name = ''
         chat_id = self.get_chat_id_from_bot(update)
-        Chat.update_recipe_category(chat_id=chat_id, category=category_name)
+        Chat.update_recipe_category_name(chat_id=chat_id, category_name=category_name)
         self.send_main_menu(update, context, text=text)
 
     def update_like_in_db(self, update: Update, context: CallbackContext):
@@ -409,7 +419,7 @@ class Command(BaseCommand):
         chat_id = self.get_chat_id_from_bot(update)
         like_recipes_titles = Chat.get_like_recipes_titles(chat_id=chat_id)
         if like_recipes_titles:
-            text = '\n'.join(like_recipes_titles)
+            text = '\n'.join(['_Вам понравились эти рецепты:_\n'] + like_recipes_titles)
         else:
             text = 'Пока здесь ничего нет. Вы не лайкнули ни одного рецепта'
         self.send_main_menu(update, context, text=text)
