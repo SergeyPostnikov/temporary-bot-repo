@@ -164,6 +164,8 @@ class Recipe(models.Model):
         chat.count_show_recipe += 1   # Счетчик кол-ва показов рецептов у пользователя
         if chat.chat_date != datetime.date.today():
             chat.count_show_recipe = 0
+        if chat.count_show_recipe > 3:
+            return None
         chat.chat_date = datetime.date.today()
         chat.save()
         return random_recipe
